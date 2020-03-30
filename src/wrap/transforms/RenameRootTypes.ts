@@ -5,10 +5,10 @@ import {
   Kind,
   GraphQLObjectType,
 } from 'graphql';
+import { toConfig } from '@graphql-toolkit/core';
 
 import { Request, Result, MapperKind, Transform } from '../../Interfaces';
 import { mapSchema } from '../../utils/index';
-import { toConfig } from '../../polyfills/index';
 
 export default class RenameRootTypes implements Transform {
   private readonly renamer: (name: string) => string | undefined;

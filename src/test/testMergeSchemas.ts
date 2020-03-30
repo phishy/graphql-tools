@@ -21,8 +21,8 @@ import { mergeSchemas } from '../stitch/index';
 import {
   cloneSchema,
   getResolversFromSchema,
-  graphqlVersion,
   SchemaDirectiveVisitor,
+  getGraphQLVersion,
 } from '../utils/index';
 import { addMocksToSchema } from '../mock/index';
 
@@ -2421,7 +2421,7 @@ fragment BookingFragment on Booking {
           },
         ];
 
-        if (graphqlVersion() >= 14) {
+        if (getGraphQLVersion() >= 14) {
           expectedErrors[0].extensions = {
             code: 'SOME_CUSTOM_CODE',
           };
@@ -2745,7 +2745,7 @@ fragment BookingFragment on Booking {
         });
       });
 
-      if (graphqlVersion() >= 13) {
+      if (getGraphQLVersion() >= 13) {
         it('interface extensions', async () => {
           const result = await graphql(
             mergedSchema,

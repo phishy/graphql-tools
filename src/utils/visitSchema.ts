@@ -15,6 +15,7 @@ import {
   isEnumType,
   isInputType,
 } from 'graphql';
+import { each, updateEachKey, healSchema } from '@graphql-toolkit/core';
 
 import {
   VisitableSchemaType,
@@ -24,10 +25,7 @@ import {
   SchemaVisitorMap,
 } from '../Interfaces';
 
-import updateEachKey from './updateEachKey';
-import { healSchema } from './heal';
 import { SchemaVisitor } from './SchemaVisitor';
-import each from './each';
 
 // Generic function for visiting GraphQLSchema objects.
 export function visitSchema(

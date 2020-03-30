@@ -2,7 +2,6 @@ import {
   GraphQLSchema,
   GraphQLField,
   ExecutionResult,
-  GraphQLInputType,
   GraphQLType,
   GraphQLNamedType,
   GraphQLFieldResolver,
@@ -27,22 +26,92 @@ import {
   GraphQLFieldConfig,
   FragmentDefinitionNode,
   SelectionNode,
-  VariableDefinitionNode,
+  VariableDefinitionNode
 } from 'graphql';
-
+import {
+  ITypeDefinitions,
+  IResolverValidationOptions,
+  GraphQLParseOptions,
+  IAddResolversToSchemaOptions
+} from '@graphql-toolkit/core';
 import { TypeMap } from 'graphql/type/schema';
 import { ApolloLink } from 'apollo-link';
 
-import { SchemaVisitor } from './utils/SchemaVisitor';
-import { SchemaDirectiveVisitor } from './utils/SchemaDirectiveVisitor';
+import {
+  IResolvers as IResolversWithoutMergeInfo,
+  IFieldResolver as IFieldResolverWithoutMergeInfo,
+  IResolverOptions as IResolverOptionsWithoutMergeInfo,
+  IResolverObject as IResolverObjectWithoutMergeInfo,
+  IDirectiveResolvers,
+  NextResolverFn,
+  IEnumResolver
+} from '@graphql-toolkit/common';
 
-export interface IResolverValidationOptions {
-  requireResolversForArgs?: boolean;
-  requireResolversForNonScalar?: boolean;
-  requireResolversForAllFields?: boolean;
-  requireResolversForResolveType?: boolean;
-  allowResolversNotInSchema?: boolean;
+import { SchemaVisitor } from './utils/SchemaVisitor';
+import { SchemaDirectiveVisitor } from './utils';
+
+type WithMergeInfo<T> = T extends IResolversWithoutMergeInfo<infer S, infer C>
+  ? {
+      [key: string]:
+        | (() => any)
+        | WithMergeInfo<IResolverObject<S, C>>
+        | WithMergeInfo<IResolverOptions<S, C>>
+        | GraphQLScalarType
+        | IEnumResolver;
+    }
+  : T extends IResolverObjectWithoutMergeInfo<infer S, infer C, infer A>
+  ? {
+      [key: string]:
+        | WithMergeInfo<IFieldResolverWithoutMergeInfo<S, C, A>>
+        | WithMergeInfo<IResolverOptionsWithoutMergeInfo<S, C, A>>
+        | WithMergeInfo<IResolverObjectWithoutMergeInfo<S, C, A>>;
+    }
+  : T extends IFieldResolverWithoutMergeInfo<infer S, infer C, infer A>
+  ? IFieldResolver<S, C, A>
+  : T extends IResolverOptionsWithoutMergeInfo<infer S, infer C, infer A>
+  ? IResolverOptions<S, C, A>
+  : T;
+
+export type IFieldResolver<TSource, TContext, TArgs = Record<string, any>> = (
+  source: TSource,
+  args: TArgs,
+  context: TContext,
+  info: GraphQLResolveInfo & { mergeInfo: MergeInfo }
+) => any;
+
+export interface IResolverOptions<TSource = any, TContext = any, TArgs = any> {
+  fragment?: string;
+  resolve?: IFieldResolver<TSource, TContext, TArgs>;
+  subscribe?: IFieldResolver<TSource, TContext, TArgs>;
+  __resolveType?: GraphQLTypeResolver<TSource, TContext>;
+  __isTypeOf?: GraphQLIsTypeOfFn<TSource, TContext>;
 }
+
+export interface IResolverObject<TSource = any, TContext = any, TArgs = any> {
+  [key: string]:
+    | IFieldResolver<TSource, TContext, TArgs>
+    | IResolverOptions<TSource, TContext>
+    | IResolverObject<TSource, TContext>;
+}
+
+export type IResolvers<TSource = any, TContext = any> = WithMergeInfo<
+  IResolversWithoutMergeInfo<TSource, TContext>
+>;
+
+export {
+  ITypeDefinitions,
+  IResolverValidationOptions,
+  GraphQLParseOptions,
+  IDirectiveResolvers,
+  NextResolverFn,
+  IAddResolversToSchemaOptions,
+  IEnumResolver
+};
+
+export type IResolversParameter =
+  | Array<IResolvers | ((mergeInfo: MergeInfo) => IResolvers)>
+  | IResolvers
+  | ((mergeInfo: MergeInfo) => IResolvers);
 
 // for backwards compatibility
 export interface IAddResolveFunctionsToSchemaOptions {
@@ -51,22 +120,6 @@ export interface IAddResolveFunctionsToSchemaOptions {
   defaultFieldResolver: IFieldResolver<any, any>;
   resolverValidationOptions: IResolverValidationOptions;
   inheritResolversFromInterfaces: boolean;
-}
-
-export interface IAddResolversToSchemaOptions {
-  schema: GraphQLSchema;
-  resolvers: IResolvers;
-  defaultFieldResolver?: IFieldResolver<any, any>;
-  resolverValidationOptions?: IResolverValidationOptions;
-  inheritResolversFromInterfaces?: boolean;
-}
-
-export interface IResolverOptions<TSource = any, TContext = any, TArgs = any> {
-  fragment?: string;
-  resolve?: IFieldResolver<TSource, TContext, TArgs>;
-  subscribe?: IFieldResolver<TSource, TContext, TArgs>;
-  __resolveType?: GraphQLTypeResolver<TSource, TContext>;
-  __isTypeOf?: GraphQLIsTypeOfFn<TSource, TContext>;
 }
 
 export interface Transform {
@@ -78,14 +131,14 @@ export interface Transform {
 export type FieldTransformer = (
   typeName: string,
   fieldName: string,
-  field: GraphQLField<any, any>,
+  field: GraphQLField<any, any>
 ) => GraphQLFieldConfig<any, any> | RenamedField | null | undefined;
 
 export type FieldNodeTransformer = (
   typeName: string,
   fieldName: string,
   fieldNode: FieldNode,
-  fragments: Record<string, FragmentDefinitionNode>,
+  fragments: Record<string, FragmentDefinitionNode>
 ) => SelectionNode | Array<SelectionNode>;
 
 export type RenamedField = {
@@ -93,25 +146,19 @@ export type RenamedField = {
   field?: GraphQLFieldConfig<any, any>;
 };
 
-export type FieldFilter = (
-  typeName?: string,
-  fieldName?: string,
-  field?: GraphQLField<any, any>,
-) => boolean;
+export type FieldFilter = (typeName?: string, fieldName?: string, field?: GraphQLField<any, any>) => boolean;
 
 export type RootFieldFilter = (
   operation?: 'Query' | 'Mutation' | 'Subscription',
   rootFieldName?: string,
-  field?: GraphQLField<any, any>,
+  field?: GraphQLField<any, any>
 ) => boolean;
 
 export interface IGraphQLToolsResolveInfo extends GraphQLResolveInfo {
   mergeInfo?: MergeInfo;
 }
 
-export type Fetcher = (
-  operation: IFetcherOperation,
-) => Promise<ExecutionResult>;
+export type Fetcher = (operation: IFetcherOperation) => Promise<ExecutionResult>;
 
 export interface IFetcherOperation {
   query: DocumentNode;
@@ -146,7 +193,7 @@ export type MergedTypeResolver = (
   context: Record<string, any>,
   info: IGraphQLToolsResolveInfo,
   subschema: GraphQLSchema | SubschemaConfig,
-  selectionSet: SelectionSetNode,
+  selectionSet: SelectionSetNode
 ) => any;
 
 export interface GraphQLSchemaWithTransforms extends GraphQLSchema {
@@ -160,9 +207,7 @@ export type SchemaLikeObject =
   | DocumentNode
   | Array<GraphQLNamedType>;
 
-export function isSubschemaConfig(
-  value: SchemaLikeObject,
-): value is SubschemaConfig {
+export function isSubschemaConfig(value: SchemaLikeObject): value is SubschemaConfig {
   return Boolean((value as SubschemaConfig).schema);
 }
 
@@ -210,7 +255,7 @@ export interface IDelegateRequestOptions extends IDelegateToSchemaOptions {
 export type Delegator = ({
   document,
   context,
-  variables,
+  variables
 }: {
   document: DocumentNode;
   context?: { [key: string]: any };
@@ -224,7 +269,7 @@ export interface MergeInfo {
     args: { [key: string]: any },
     context: { [key: string]: any },
     info: GraphQLResolveInfo,
-    transforms?: Array<Transform>,
+    transforms?: Array<Transform>
   ) => any;
   fragments: Array<{
     field: string;
@@ -254,42 +299,6 @@ export interface MergedTypeInfo {
   containsSelectionSet: Map<SubschemaConfig, Map<SelectionSetNode, boolean>>;
 }
 
-export type IFieldResolver<TSource, TContext, TArgs = Record<string, any>> = (
-  source: TSource,
-  args: TArgs,
-  context: TContext,
-  info: IGraphQLToolsResolveInfo,
-) => any;
-
-export type ITypedef = (() => Array<ITypedef>) | string | DocumentNode;
-
-export type ITypeDefinitions = ITypedef | Array<ITypedef>;
-
-export interface IResolverObject<TSource = any, TContext = any, TArgs = any> {
-  [key: string]:
-    | IFieldResolver<TSource, TContext, TArgs>
-    | IResolverOptions<TSource, TContext>
-    | IResolverObject<TSource, TContext>;
-}
-
-export interface IEnumResolver {
-  [key: string]: string | number;
-}
-
-export interface IResolvers<TSource = any, TContext = any> {
-  [key: string]:
-    | (() => any)
-    | IResolverObject<TSource, TContext>
-    | IResolverOptions<TSource, TContext>
-    | GraphQLScalarType
-    | IEnumResolver;
-}
-
-export type IResolversParameter =
-  | Array<IResolvers | ((mergeInfo: MergeInfo) => IResolvers)>
-  | IResolvers
-  | ((mergeInfo: MergeInfo) => IResolvers);
-
 export interface ILogger {
   log: (error: Error) => void;
 }
@@ -298,9 +307,7 @@ export type IConnectorCls<TContext = any> = new (context?: TContext) => any;
 
 export type IConnectorFn<TContext = any> = (context?: TContext) => any;
 
-export type IConnector<TContext = any> =
-  | IConnectorCls<TContext>
-  | IConnectorFn<TContext>;
+export type IConnector<TContext = any> = IConnectorCls<TContext> | IConnectorFn<TContext>;
 
 export interface IConnectors<TContext = any> {
   [key: string]: IConnector<TContext>;
@@ -319,31 +326,6 @@ export interface IExecutableSchemaDefinition<TContext = any> {
   inheritResolversFromInterfaces?: boolean;
 }
 
-export type IFieldIteratorFn = (
-  fieldDef: GraphQLField<any, any>,
-  typeName: string,
-  fieldName: string,
-) => void;
-
-export type IDefaultValueIteratorFn = (
-  type: GraphQLInputType,
-  value: any,
-) => void;
-
-export type NextResolverFn = () => Promise<any>;
-
-export type DirectiveResolverFn<TSource = any, TContext = any> = (
-  next: NextResolverFn,
-  source: TSource,
-  args: { [argName: string]: any },
-  context: TContext,
-  info: GraphQLResolveInfo,
-) => any;
-
-export interface IDirectiveResolvers<TSource = any, TContext = any> {
-  [directiveName: string]: DirectiveResolverFn<TSource, TContext>;
-}
-
 /* XXX on mocks, args are optional, Not sure if a bug. */
 export type IMockFn = GraphQLFieldResolver<any, any>;
 
@@ -354,7 +336,7 @@ export interface IMocks {
 export type IMockTypeFn = (
   type: GraphQLType,
   typeName?: string,
-  fieldName?: string,
+  fieldName?: string
 ) => GraphQLFieldResolver<any, any>;
 
 export interface IMockOptions {
@@ -364,10 +346,7 @@ export interface IMockOptions {
 }
 
 export interface IMockServer {
-  query: (
-    query: string,
-    vars?: { [key: string]: any },
-  ) => Promise<ExecutionResult>;
+  query: (query: string, vars?: { [key: string]: any }) => Promise<ExecutionResult>;
 }
 
 export type OnTypeConflict = (
@@ -380,7 +359,7 @@ export type OnTypeConflict = (
     right: {
       schema?: GraphQLSchema | SubschemaConfig;
     };
-  },
+  }
 ) => GraphQLNamedType;
 
 export type Operation = 'query' | 'mutation' | 'subscription';
@@ -394,15 +373,6 @@ export interface Request {
 export interface Result extends ExecutionResult {
   extensions?: Record<string, any>;
 }
-
-export interface GraphQLParseOptions {
-  noLocation?: boolean;
-  allowLegacySDLEmptyFields?: boolean;
-  allowLegacySDLImplementsInterfaces?: boolean;
-  experimentalFragmentVariables?: boolean;
-}
-
-export type IndexedObject<V> = { [key: string]: V } | ReadonlyArray<V>;
 
 export type VisitableSchemaType =
   | GraphQLSchema
@@ -420,7 +390,7 @@ export type VisitableSchemaType =
 
 export type VisitorSelector = (
   type: VisitableSchemaType,
-  methodName: string,
+  methodName: string
 ) => Array<SchemaVisitor | SchemaVisitorMap>;
 
 export enum VisitSchemaKind {
@@ -436,7 +406,7 @@ export enum VisitSchemaKind {
   ROOT_OBJECT = 'VisitSchemaKind.ROOT_OBJECT',
   QUERY = 'VisitSchemaKind.QUERY',
   MUTATION = 'VisitSchemaKind.MUTATION',
-  SUBSCRIPTION = 'VisitSchemaKind.SUBSCRIPTION',
+  SUBSCRIPTION = 'VisitSchemaKind.SUBSCRIPTION'
 }
 
 export interface SchemaVisitorMap {
@@ -457,52 +427,47 @@ export interface SchemaVisitorMap {
 
 export type NamedTypeVisitor = (
   type: GraphQLNamedType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLNamedType | null | undefined;
 
 export type ScalarTypeVisitor = (
   type: GraphQLScalarType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLScalarType | null | undefined;
 
 export type EnumTypeVisitor = (
   type: GraphQLEnumType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLEnumType | null | undefined;
 
 export type CompositeTypeVisitor = (
   type: GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType,
-  schema: GraphQLSchema,
-) =>
-  | GraphQLObjectType
-  | GraphQLInterfaceType
-  | GraphQLUnionType
-  | null
-  | undefined;
+  schema: GraphQLSchema
+) => GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType | null | undefined;
 
 export type ObjectTypeVisitor = (
   type: GraphQLObjectType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLObjectType | null | undefined;
 
 export type InputObjectTypeVisitor = (
   type: GraphQLInputObjectType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLInputObjectType | null | undefined;
 
 export type AbstractTypeVisitor = (
   type: GraphQLInterfaceType | GraphQLUnionType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLInterfaceType | GraphQLUnionType | null | undefined;
 
 export type UnionTypeVisitor = (
   type: GraphQLUnionType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLUnionType | null | undefined;
 
 export type InterfaceTypeVisitor = (
   type: GraphQLInterfaceType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLInterfaceType | null | undefined;
 
 export enum MapperKind {
@@ -519,7 +484,7 @@ export enum MapperKind {
   QUERY = 'MapperKind.QUERY',
   MUTATION = 'MapperKind.MUTATION',
   SUBSCRIPTION = 'MapperKind.SUBSCRIPTION',
-  DIRECTIVE = 'MapperKind.DIRECTIVE',
+  DIRECTIVE = 'MapperKind.DIRECTIVE'
 }
 
 export interface SchemaMapper {
@@ -541,55 +506,50 @@ export interface SchemaMapper {
 
 export type NamedTypeMapper = (
   type: GraphQLNamedType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLNamedType | null | undefined;
 
 export type ScalarTypeMapper = (
   type: GraphQLScalarType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLScalarType | null | undefined;
 
 export type EnumTypeMapper = (
   type: GraphQLEnumType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLEnumType | null | undefined;
 
 export type CompositeTypeMapper = (
   type: GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType,
-  schema: GraphQLSchema,
-) =>
-  | GraphQLObjectType
-  | GraphQLInterfaceType
-  | GraphQLUnionType
-  | null
-  | undefined;
+  schema: GraphQLSchema
+) => GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType | null | undefined;
 
 export type ObjectTypeMapper = (
   type: GraphQLObjectType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLObjectType | null | undefined;
 
 export type InputObjectTypeMapper = (
   type: GraphQLInputObjectType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLInputObjectType | null | undefined;
 
 export type AbstractTypeMapper = (
   type: GraphQLInterfaceType | GraphQLUnionType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLInterfaceType | GraphQLUnionType | null | undefined;
 
 export type UnionTypeMapper = (
   type: GraphQLUnionType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLUnionType | null | undefined;
 
 export type InterfaceTypeMapper = (
   type: GraphQLInterfaceType,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLInterfaceType | null | undefined;
 
 export type DirectiveMapper = (
   directive: GraphQLDirective,
-  schema: GraphQLSchema,
+  schema: GraphQLSchema
 ) => GraphQLDirective | null | undefined;

@@ -31,7 +31,7 @@ import {
   TokenKind,
 } from 'graphql';
 
-import { createNamedStub, graphqlVersion } from '../utils/index';
+import { createNamedStub, getGraphQLVersion } from '../utils/index';
 
 import resolveFromParentTypename from './resolveFromParentTypename';
 
@@ -90,7 +90,7 @@ function makeInterfaceType(
     name: node.name.value,
     fields: () => makeFields(node.fields),
     interfaces:
-      graphqlVersion() >= 15
+      getGraphQLVersion() >= 15
         ? () =>
             ((node as unknown) as ObjectTypeDefinitionNode).interfaces.map(
               (iface) =>

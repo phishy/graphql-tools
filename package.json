@@ -49,6 +49,8 @@
   },
   "homepage": "https://github.com/apollostack/graphql-tools#readme",
   "dependencies": {
+    "@graphql-toolkit/core": "0.9.13-alpha-dc8c30b.4+dc8c30b",
+    "@graphql-toolkit/common": "0.9.13-alpha-dc8c30b.4+dc8c30b",
     "apollo-link": "^1.2.13",
     "apollo-link-http-common": "^0.2.15",
     "deprecated-decorator": "^0.1.6",

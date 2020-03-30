@@ -8,10 +8,11 @@ import { getArgumentValues } from 'graphql/execution/values';
 
 import { VisitableSchemaType } from '../Interfaces';
 
-import each from './each';
 import valueFromASTUntyped from './valueFromASTUntyped';
 import { SchemaVisitor } from './SchemaVisitor';
 import { visitSchema } from './visitSchema';
+
+import { each } from './index';
 
 const hasOwn = Object.prototype.hasOwnProperty;
 

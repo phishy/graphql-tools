@@ -15,6 +15,8 @@ import {
   GraphQLObjectType,
 } from 'graphql';
 
+import { toConfig } from '../../polyfills';
+
 import isEmptyObject from '../../utils/isEmptyObject';
 import {
   Transform,
@@ -25,7 +27,6 @@ import {
   RenamedField,
 } from '../../Interfaces';
 import { mapSchema } from '../../utils/index';
-import { toConfig } from '../../polyfills/index';
 
 type FieldMapping = {
   [typeName: string]: {

@@ -40,7 +40,7 @@ import {
   wrapFieldNode,
   renameFieldNode,
   hoistFieldNodes,
-  graphqlVersion,
+  getGraphQLVersion,
 } from '../utils/index';
 
 import {
@@ -655,7 +655,7 @@ describe('transform object fields', () => {
       ],
     };
 
-    if (graphqlVersion() < 14) {
+    if (getGraphQLVersion() < 14) {
       expectedResult.errors[0].path = undefined;
     }
 
@@ -686,7 +686,7 @@ describe('filter and rename object fields', () => {
   });
 
   it('should filter', () => {
-    if (graphqlVersion() >= 15) {
+    if (getGraphQLVersion() >= 15) {
       expect(printSchema(transformedPropertySchema)).to
         .equal(`type New_Property {
   new_id: ID!
@@ -774,7 +774,7 @@ type Query {
       ],
     };
 
-    if (graphqlVersion() >= 14) {
+    if (getGraphQLVersion() >= 14) {
       expectedResult.errors[0].extensions = {
         code: 'SOME_CUSTOM_CODE',
       };
@@ -945,7 +945,7 @@ describe('WrapType transform', () => {
       ],
     };
 
-    if (graphqlVersion() >= 14) {
+    if (getGraphQLVersion() >= 14) {
       expectedResult.errors[0].extensions = {
         code: 'SOME_CUSTOM_CODE',
       };
@@ -1025,7 +1025,7 @@ describe('schema transformation with extraction of nested fields', () => {
       ],
     };
 
-    if (graphqlVersion() >= 14) {
+    if (getGraphQLVersion() >= 14) {
       expectedResult.errors[0].extensions = {
         code: 'SOME_CUSTOM_CODE',
       };
@@ -1168,7 +1168,7 @@ describe('schema transformation with wrapping of object fields', () => {
       ],
     };
 
-    if (graphqlVersion() >= 14) {
+    if (getGraphQLVersion() >= 14) {
       expectedResult.errors[0].extensions = {
         code: 'SOME_CUSTOM_CODE',
       };
@@ -1245,7 +1245,7 @@ describe('schema transformation with wrapping of object fields', () => {
         ],
       };
 
-      if (graphqlVersion() >= 14) {
+      if (getGraphQLVersion() >= 14) {
         expectedResult.errors[0].extensions = {
           code: 'SOME_CUSTOM_CODE',
         };
@@ -1329,7 +1329,7 @@ describe('schema transformation with wrapping of object fields', () => {
         ],
       };
 
-      if (graphqlVersion() >= 14) {
+      if (getGraphQLVersion() >= 14) {
         expectedResult.errors[0].extensions = {
           code: 'SOME_CUSTOM_CODE',
         };
@@ -1402,7 +1402,7 @@ describe('schema transformation with renaming of object fields', () => {
       ],
     };
 
-    if (graphqlVersion() >= 14) {
+    if (getGraphQLVersion() >= 14) {
       expectedResult.errors[0].extensions = {
         code: 'SOME_CUSTOM_CODE',
       };
@@ -1558,7 +1558,7 @@ describe('mergeSchemas', () => {
     const query = '{ getInput(input: {}) }';
     const response = await graphql(mergedSchema, query);
 
-    if (graphqlVersion() >= 15) {
+    if (getGraphQLVersion() >= 15) {
       expect(printSchema(schema)).to.equal(`input InputWithDefault {
   field: String = "test"
 }

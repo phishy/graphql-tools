@@ -4,11 +4,9 @@ import {
   getNamedType,
   isScalarType,
 } from 'graphql';
+import { SchemaError, forEachField } from '@graphql-toolkit/core';
 
 import { IResolverValidationOptions } from '../Interfaces';
-import { forEachField } from '../utils/index';
-
-import SchemaError from './SchemaError';
 
 function assertResolversPresent(
   schema: GraphQLSchema,

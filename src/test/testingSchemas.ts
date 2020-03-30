@@ -21,7 +21,7 @@ import { forAwaitEach } from 'iterall';
 import introspectSchema from '../stitch/introspectSchema';
 import { IResolvers, Fetcher, SubschemaConfig } from '../Interfaces';
 import { makeExecutableSchema } from '../generate/index';
-import { graphqlVersion } from '../utils/index';
+import { getGraphQLVersion } from '../utils/index';
 
 export type Location = {
   name: string;
@@ -274,14 +274,14 @@ const propertyRootTypeDefs = `
   }
 
   ${
-    graphqlVersion() >= 15
+    getGraphQLVersion() >= 15
       ? `interface TestNestedInterface implements TestInterface {
     kind: TestInterfaceKind
     testString: String
   }
 
   type TestImpl2 implements TestNestedInterface${
-    graphqlVersion() >= 13 ? ' &' : ', '
+    getGraphQLVersion() >= 13 ? ' &' : ', '
   } TestInterface {
     kind: TestInterfaceKind
     testString: String
@@ -417,7 +417,7 @@ const propertyResolvers: IResolvers = {
 
 const DownloadableProduct = `
   type DownloadableProduct implements Product${
-    graphqlVersion() >= 13 ? ' &' : ', '
+    getGraphQLVersion() >= 13 ? ' &' : ', '
   } Downloadable {
     id: ID!
     url: String!
@@ -425,7 +425,7 @@ const DownloadableProduct = `
 `;
 
 const SimpleProduct = `type SimpleProduct implements Product${
-  graphqlVersion() >= 13 ? ' &' : ', '
+  getGraphQLVersion() >= 13 ? ' &' : ', '
 } Sellable {
     id: ID!
     price: Int!

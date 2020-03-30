@@ -22,11 +22,11 @@ import {
 } from 'graphql';
 
 import {
+  IResolvers,
   OnTypeConflict,
   IResolversParameter,
   isSubschemaConfig,
   SchemaLikeObject,
-  IResolvers,
   SubschemaConfig,
 } from '../Interfaces';
 import {
@@ -40,9 +40,10 @@ import {
   healTypes,
   forEachField,
   mergeDeep,
-  graphqlVersion,
+  getGraphQLVersion,
 } from '../utils/index';
-import { toConfig, extendSchema } from '../polyfills/index';
+
+import { extendSchema, toConfig } from '../polyfills/index';
 
 import typeFromAST from './typeFromAST';
 import { createMergeInfo, completeMergeInfo } from './mergeInfo';
@@ -368,7 +369,7 @@ function merge(
         {},
       ),
       interfaces:
-        graphqlVersion() >= 15
+        getGraphQLVersion() >= 15
           ? candidates.reduce((acc, candidate) => {
               const interfaces = toConfig(candidate.type).interfaces;
               return interfaces != null ? acc.concat(interfaces) : acc;

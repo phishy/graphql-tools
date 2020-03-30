@@ -28,8 +28,8 @@ import {
   GraphQLObjectTypeConfig,
 } from 'graphql';
 
-import { toConfig, isSpecifiedScalarType } from '../polyfills/index';
-import { graphqlVersion } from '../utils/index';
+import { getGraphQLVersion } from '../utils';
+import { isSpecifiedScalarType, toConfig } from '../polyfills/index';
 import {
   SchemaMapper,
   MapperKind,
@@ -262,7 +262,7 @@ export function rewireTypes(
         ...config,
         fields: () => rewireFields(config.fields),
       };
-      if (graphqlVersion() >= 15) {
+      if (getGraphQLVersion() >= 15) {
         ((newConfig as unknown) as GraphQLObjectTypeConfig<
           any,
           any
@@ -376,7 +376,7 @@ function pruneTypes(
 
     if (
       isObjectType(namedType) ||
-      (graphqlVersion() >= 15 && isInterfaceType(namedType))
+      (getGraphQLVersion() >= 15 && isInterfaceType(namedType))
     ) {
       (namedType as GraphQLObjectType).getInterfaces().forEach((iface) => {
         implementedInterfaces[iface.name] = true;

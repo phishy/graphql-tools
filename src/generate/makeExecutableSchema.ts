@@ -3,22 +3,20 @@ import {
   GraphQLSchema,
   GraphQLFieldResolver,
 } from 'graphql';
+import { makeExecutableSchema as _makeExecutableSchema } from '@graphql-toolkit/core';
 
 import { IExecutableSchemaDefinition, ILogger } from '../Interfaces';
 import {
   SchemaDirectiveVisitor,
   forEachField,
-  mergeDeep,
+  SchemaError,
 } from '../utils/index';
 
 import attachDirectiveResolvers from './attachDirectiveResolvers';
 import assertResolversPresent from './assertResolversPresent';
-import addResolversToSchema from './addResolversToSchema';
 import attachConnectorsToContext from './attachConnectorsToContext';
 import addSchemaLevelResolver from './addSchemaLevelResolver';
-import buildSchemaFromTypeDefinitions from './buildSchemaFromTypeDefinitions';
 import decorateWithLogger from './decorateWithLogger';
-import SchemaError from './SchemaError';
 
 export function makeExecutableSchema<TContext = any>({
   typeDefs,
@@ -32,6 +30,10 @@ export function makeExecutableSchema<TContext = any>({
   parseOptions = {},
   inheritResolversFromInterfaces = false,
 }: IExecutableSchemaDefinition<TContext>) {
+  if (!typeDefs) {
+    throw new SchemaError('Must provide typeDefs');
+  }
+
   // Validate and clean up arguments
   if (typeof resolverValidationOptions !== 'object') {
     throw new SchemaError(
@@ -39,24 +41,10 @@ export function makeExecutableSchema<TContext = any>({
     );
   }
 
-  if (!typeDefs) {
-    throw new SchemaError('Must provide typeDefs');
-  }
-
-  // We allow passing in an array of resolver maps, in which case we merge them
-  const resolverMap = Array.isArray(resolvers)
-    ? resolvers
-        .filter((resolverObj) => typeof resolverObj === 'object')
-        .reduce(mergeDeep, {})
-    : resolvers;
-
-  // Arguments are now validated and cleaned up
-
-  const schema = buildSchemaFromTypeDefinitions(typeDefs, parseOptions);
-
-  addResolversToSchema({
-    schema,
-    resolvers: resolverMap,
+  const schema = _makeExecutableSchema({
+    typeDefs,
+    resolvers,
+    parseOptions,
     resolverValidationOptions,
     inheritResolversFromInterfaces,
   });

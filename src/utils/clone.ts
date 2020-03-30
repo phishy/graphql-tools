@@ -19,8 +19,9 @@ import {
 
 import { isSpecifiedScalarType, toConfig } from '../polyfills/index';
 
-import { graphqlVersion } from './graphqlVersion';
 import { mapSchema } from './map';
+
+import { getGraphQLVersion } from './index';
 
 export function cloneDirective(directive: GraphQLDirective): GraphQLDirective {
   return new GraphQLDirective(toConfig(directive));
@@ -41,7 +42,7 @@ export function cloneType(type: GraphQLNamedType): GraphQLNamedType {
     const newConfig = {
       ...config,
       interfaces:
-        graphqlVersion() >= 15
+        getGraphQLVersion() >= 15
           ? typeof ((config as unknown) as GraphQLObjectTypeConfig<any, any>)
               .interfaces === 'function'
             ? ((config as unknown) as GraphQLObjectTypeConfig<any, any>)

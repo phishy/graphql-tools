@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { parse } from 'graphql';
 
-import { extractExtensionDefinitions } from '../generate/extensionDefinitions';
+import { extractExtensionDefinitions } from '../generate';
 
 describe('Extension extraction', () => {
   it('extracts extended inputs', () => {
