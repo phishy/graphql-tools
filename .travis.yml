@@ -31,8 +31,5 @@ script:
   - npm install graphql@$GRAPHQL_VERSION
   - npm run testonly:cover
 
-after_success:
-  - npm run coverage
-
 # Allow Travis tests to run in containers.
 sudo: false
